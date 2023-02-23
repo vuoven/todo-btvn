@@ -1,6 +1,6 @@
 import { loadTodos } from "@/utils/loadTodo";
 import { Button, TextInput } from "flowbite-react";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 export interface Todo {
@@ -13,7 +13,7 @@ interface IHomeProps {
   todos: Todo[];
 }
 interface ErrorInput {
-  type: "add";
+  type: "required";
   message?: string;
 }
 export default function Home(props: IHomeProps) {
@@ -25,8 +25,8 @@ export default function Home(props: IHomeProps) {
   const handleOnAdd = () => {
     if (value === "") {
       setErrorInput({
-        type: "add",
-        message: "This field is required",
+        type: "required",
+        message: "*Please input the new title",
       });
       return;
     }
@@ -50,11 +50,19 @@ export default function Home(props: IHomeProps) {
     todo: Todo,
     e: React.MouseEvent<HTMLButtonElement, MouseEvent>
   ) => {
+    setErrorInput(null)
     setEditing(true);
     setValue(todo.title);
     setCurrentTodo(todo);
   };
   const handleOnSave = () => {
+    if (value === "") {
+      setErrorInput({
+        type: "required",
+        message: "*Please input title you want to edit",
+      });
+      return;
+    }
     if (currentTodo) {
       const currentIndex = listTodo.findIndex(
         (todo) => todo.id === currentTodo.id
@@ -64,8 +72,14 @@ export default function Home(props: IHomeProps) {
     setEditing(false);
     setCurrentTodo(null);
     setValue("");
+    setErrorInput(null)
     toast.success("Todo is edited successfully");
   };
+  const handleOnCancelEdit = () => {
+    setErrorInput(null)
+    setValue("");
+    setEditing(false)
+  }
   return (
     <>
       <main className="flex justify-center items-center h-screen bg-black">
@@ -79,13 +93,12 @@ export default function Home(props: IHomeProps) {
                   onChange={(e) => setValue(e.target.value)}
                   onKeyDown={(e) => {if (e.key === 'Enter') handleOnAdd()}}
                   placeholder="What do you want to do?"
-                  color={errorInput?.type === "add" ? "failure" : "gray"}
+                  color={errorInput?.type === "required" ? "failure" : "gray"}
                   helperText={
-                    errorInput?.type === "add" ? errorInput.message : ""
+                    errorInput?.type === "required" ? errorInput.message : ""
                   }
                 />
               </div>
-
               <Button color="success" onClick={() => handleOnAdd()}>
                 Add
               </Button>
@@ -98,15 +111,18 @@ export default function Home(props: IHomeProps) {
                   value={value}
                   onChange={(e) => setValue(e.target.value)}
                   onKeyDown={(e) => {if (e.key === 'Enter') handleOnSave()}}
-                  color={errorInput?.type === "add" ? "failure" : "gray"}
+                  color={errorInput?.type === "required" ? "failure" : "gray"}
                   helperText={
-                    errorInput?.type === "add" ? errorInput.message : ""
+                    errorInput?.type === "required" ? errorInput.message : ""
                   }
                 />
               </div>
 
               <Button color="success" onClick={() => handleOnSave()}>
                 Save
+              </Button>
+              <Button outline color="gray" onClick={() => handleOnCancelEdit()}>
+                Cancel
               </Button>
             </div>
           )}
@@ -115,7 +131,6 @@ export default function Home(props: IHomeProps) {
             {listTodo &&
               listTodo.map((todo) => {
                 return (
-                  <>
                     <div key={todo.id}>
                       <li className="flex justify-between items-center flex-row gap-3 mb-3 hover:bg-slate-400 px-3 py-2">
                         <input
@@ -138,7 +153,6 @@ export default function Home(props: IHomeProps) {
                         </div>
                       </li>
                     </div>
-                  </>
                 );
               })}
             {listTodo.length === 0 && (
